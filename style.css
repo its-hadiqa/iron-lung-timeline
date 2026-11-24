@@ -1,0 +1,231 @@
+/* fonts*/
+@font-face { font-family: "DIN"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/DINishExpanded-Medium.woff2") format("woff2"); }
+@font-face { font-family: "DIN"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/DINishExpanded-Bold.woff2") format("woff2"); }
+
+:root {
+  /* colours */
+  --bg: #091312;   /* background of page + popup */
+  --ink: #d0ebdb;   /* text */
+  --green: #4bb27c;   /* timestamps, speakers, links accent */
+  --blood: #ec6a4f;   /* injuries accent */
+  --line: rgba(201, 232, 214, .3);   /* dim lines between entries, around boxes, connecting vertical line */
+  --ink-faint: #6f8c7d; /* tags, subevents, pictures without a file */
+
+  /* fontstack if it doesn't work for some reason*/
+  --sans: "DIN", sans-serif;
+
+  /* layout sizes */
+  /* rem = basically font size */
+  --page: 45rem;   /* entire column width */
+  --time-col:  7rem;  /* width of timestamp part of column */
+  --col-gap:1.5rem;  /* space between timestamp and text  */
+  --pad: 1.5rem; /* space above/below each entry */
+}
+
+/* entire page, so that boxes don't overwflow */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  /* flat dark green */
+  background: var(--bg);
+  scrollbar-gutter: stable;   /* don't jump when the popup hides the scrollbar */
+}
+
+body {
+  max-width: var(--page); /* so that a column isn't accidentally wider than the page */
+  margin: 0 auto;
+  padding: 0 1.5rem 7rem; /* top, left-right, bottom */
+  color: var(--ink); /* default text colour */
+  font: 400 1.0625rem/1.55 var(--sans); /*weight, size (=17px), line height (=n times the size), font family */
+}
+
+/* link colour (decoration=underline), underline a little further below text */
+a { color: var(--green); text-underline-offset: .2em; }
+::selection { background: var(--green); color: var(--bg); } /* color change on selection */
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; } /* when tab-ing through links */
+
+header { padding: 3rem 0 2.25rem; text-align: center; }
+
+/*iron lung logo */
+header img {
+  display: block;
+  width: min(26rem, 80%);
+  height: auto;
+  margin: 0 auto 1.4rem;
+}
+
+/* page title (timeline of blabla) */
+header h1 {
+  margin: 0 0 1.2rem;
+  font: 400 clamp(1.05rem, 2.4vw + .5rem, 1.6rem)/1.35 var(--sans);
+}
+
+/* credits text */
+header p {
+  max-width: 62ch;
+  margin: 0 auto .9rem;
+  font-size: .92rem;
+}
+
+header b { font-weight: 400; } /* how bold is bold */
+
+/* one timestamp = one <article > */
+article {
+  position: relative; /* relative to line and marker, not the whole page */
+  display: grid;
+  grid-template-columns: var(--time-col) minmax(0, 1fr); /* one fixed width column for timestamp, one for the rest */
+  gap: .55rem var(--col-gap); /* vert, hor */
+  padding: var(--pad) 0; /* top, bottom */
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 1rem;
+  overflow-wrap: break-word; /* so that words don't overflow */
+}
+
+/* last article gets a line below (others share it with the one above */
+article:last-of-type { border-bottom: 1px solid var(--line); }
+
+article > * { align-self: baseline; } /*timestamp and first line are lined up */
+article > :not(h3) { grid-column: 2; margin: 0; } /* everything that isn't timestamp goes in the other column */
+
+/* vertical line */
+article::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(var(--time-col) + var(--col-gap) / 2); /* width of column + half of gap */
+  width: 1px;
+  background: var(--line);
+}
+
+/* marker */
+article::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--pad) + .78rem);
+  left: calc(var(--time-col) + var(--col-gap) / 2 - 3.5px);
+  width: 8px; height: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+/* entry flashes once when jumping to it */
+article:target { animation: flash 2.4s ease-out; }
+@keyframes flash { from { background: rgba(75, 178, 124, .16); } to { background: transparent; } }
+
+
+/* timestamp */
+article > h3 {
+  grid-column: 1;
+  margin: 0;
+  font: 400 1.45rem/1.15 var(--sans); /* weight, size, height, family */
+  white-space: nowrap; /* always one line */
+}
+article > h3 a { text-decoration: none; } /* green comes from the a rule above */
+article > h3 a:hover { text-decoration: underline; }
+
+
+/* what's inside an entry */
+.event    { order: 1; }
+.line     { order: 2; }
+.subevent { order: 3; }
+.pics     { order: 4; }
+.tags     { order: 5; }
+
+/* event */
+.event p, .subevent p { margin: 0; }
+.event p + p, .subevent p + p { margin-top: .7em; }
+
+/* dialogue */
+.who { color: var(--green); } /* <strong> is already bold */
+
+/* subevent */
+.subevent { font-size: .92rem; color: var(--ink-faint); }
+
+/* is it an injury? if yes, turn the elements red */
+.subevent.injury {
+  padding: .8rem 1rem;
+  border: 1px solid var(--blood);
+}
+
+article:has(.injury) > .event {
+  font: 700 1rem/1.35 var(--sans);
+  color: var(--blood);
+}
+
+/* pictures and tags: rows of little boxes */
+.pics, .tags {
+  display: flex;
+  flex-wrap: wrap; /* go to new line whten row is full */
+  gap: .4rem;
+}
+.pics a, .pics .nofile, .tags li {
+  border: 1px solid var(--line);
+  font: 400 .8rem/1 var(--sans);
+}
+
+/* pictures: little buttons, click = popup. no file / unknown number = not clickable */
+.pics a, .pics .nofile { padding: .5em .75em .45em; }
+.pics a { text-decoration: none; cursor: zoom-in; }
+.pics a:hover { border-color: var(--green); }
+.pics .nofile { color: var(--ink-faint); }
+
+/* tags, toned down not to distract from the dialogue */
+.tags { list-style: none; padding: 0; }
+/* individual tag */
+.tags li { padding: .38em .6em .33em; color: var(--ink-faint); }
+
+
+/* popup with the capture */
+dialog {
+  max-width: min(90vw, 50rem); /* smaller of either 90% of window width (for phones) or 50 font sizes (for desktops) */
+  padding: 1.1rem 1.25rem 1.25rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .7);
+}
+dialog[open] { animation: pop .18s ease-out; } /* when the animation happens */
+@keyframes pop { from { opacity: 0; transform: translateY(8px); } } /* how the animation looks */
+html:has(dialog[open]) { overflow: hidden; }   /* the page behind doesn't scroll while  popup is open */
+
+#viewer h3 {
+  margin: 0 3.2rem .85rem 0; /* top right bottom left  */
+  font: 700 1rem/1.2 var(--sans);
+  color: var(--green);
+}
+#viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: 76vh;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+}
+
+/* the x button */
+#viewer .close {
+  position: absolute;
+  top: .7rem; right: .7rem;
+  width: 2.5rem; height: 2.5rem; /* big enough for a finger on phone */
+  padding: 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.25rem;
+  cursor: pointer; /* bc it's clickable */
+}
+#viewer .close:hover { background: var(--green); border-color: var(--green); color: var(--bg); }
+
+
+/* changing layout for phone screens */
+@media (max-width: 40rem) { /* guesstimate for detecting narrow screens (not actually pheons) */
+  body { padding-inline: 1rem; }
+  article { grid-template-columns: minmax(0, 1fr); gap: .5rem; } /* just one column (timestamp on top, text below*/
+  article::before, article::after { display: none; }
+  article > :not(h3) { grid-column: 1; } /* so the browser doesn't decide to create a second column anyway*/
+  article > h3 { font-size: 1.3rem; }
+}
+
+/* accessibility (no animations for people who turned them off) */
+@media (prefers-reduced-motion: reduce) {
+  article:target, dialog[open] { animation: none; }
+}
